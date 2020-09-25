@@ -1,5 +1,6 @@
 extern crate bitfield;
 use bitfield::bitfield;
+use crate::bus::Bus;
 
 bitfield!{
     pub struct PSW(u32);
@@ -44,5 +45,11 @@ impl CPU {
             pc: 0xFFFFFFF0, // PC value on reset
             psw: PSW(0x00008000) // PSW value on reset
         }
+    }
+
+    pub fn step (&mut self, bus: &mut Bus) {
+        let opcode = bus.read16(self.pc); // Fetch an opcode. Opcodes are fetched halfword-by-halfword and can be 16 or 32 bits
+        panic!("Unimplemented opcode {:04X} at {:08X}", opcode, self.pc & 0x7FFFFFF);
+        self.pc += 2; // Increment PC
     }
 }

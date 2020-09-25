@@ -7,10 +7,14 @@ pub struct VirtualBoy {
 }
 
 impl VirtualBoy {
-    pub fn new(romPath: String) -> VirtualBoy {
+    pub fn new (romPath: String) -> VirtualBoy {
         VirtualBoy {
             cpu: CPU::new(),
             bus: Bus::new(romPath)
         }
+    }
+
+    pub fn step (&mut self) {
+        self.cpu.step(&mut self.bus);
     }
 }
