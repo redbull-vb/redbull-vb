@@ -1,13 +1,19 @@
 #![warn(clippy::all)]
 #![allow(nonstandard_style)]
 
+// Todo: Remove this from here
 pub mod cpu;
-use crate::cpu::CPU;
+pub mod mem;
+pub mod bus;
+pub mod virtualBoy;
+pub mod helpers;
+
+use crate::virtualBoy::VirtualBoy;
 
 extern crate sfml;
 use sfml::graphics::*;
-use sfml::window::*; // TODO: Not import the entire thing
+use sfml::window::*; // For future use
 
 fn main() {
-    let cpu = CPU::new();
+    let vb = VirtualBoy::new("ROMs/ScreenDemo1.vb".to_string());
 }
