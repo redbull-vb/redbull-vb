@@ -1,22 +1,18 @@
 #![warn(clippy::all)]
-#![allow(nonstandard_style)]
+#![allow(clippy::verbose_bit_mask, clippy::new_without_default)]
+
+#[macro_use]
+extern crate bitfield;
 
 // Todo: Remove this from here
 pub mod cpu;
 pub mod mem;
 pub mod bus;
-pub mod CPUInstructions;
-pub mod virtualBoy;
-pub mod helpers;
-
-use crate::virtualBoy::VirtualBoy;
-
-extern crate sfml;
-use sfml::graphics::*;
-use sfml::window::*; // For future use
+mod vb;
+pub use vb::VirtualBoy;
 
 fn main() {
-    let mut vb = VirtualBoy::new("ROMs/ScreenDemo1.vb".to_string());
+    let mut vb = VirtualBoy::new("ROMs/ScreenDemo1.vb");
 
     loop {
         vb.step();

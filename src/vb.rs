@@ -1,16 +1,16 @@
-use crate::cpu::CPU;
+use crate::cpu::Cpu;
 use crate::bus::Bus;
 
 pub struct VirtualBoy {
-    cpu: CPU,
+    cpu: Cpu,
     bus: Bus
 }
 
 impl VirtualBoy {
-    pub fn new (romPath: String) -> VirtualBoy {
+    pub fn new (rom_path: &str) -> VirtualBoy {
         VirtualBoy {
-            cpu: CPU::new(),
-            bus: Bus::new(romPath)
+            cpu: Cpu::new(),
+            bus: Bus::new(rom_path)
         }
     }
 
