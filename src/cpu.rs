@@ -7,6 +7,8 @@ const JMP_OPCODE:   u16 = 0b000110;
 const MOVEA_OPCODE: u16 = 0b101000;
 const MOVHI_OPCODE: u16 = 0b101111;
 
+const ADDI_SHORT_OPCODE: u16 = 0b010001;
+
 bitfield!{
     pub struct PSW(u32);
     pub getRaw, setRaw: 31, 0;
@@ -39,7 +41,7 @@ bitfield!{
 pub struct CPU {
     pub gprs: [u32; 32], // CPU general purpose registers (r0-r31)
     pub pc: u32, // program counter
-    psw: PSW // CPU flags
+    pub psw: PSW // CPU flags
              // TODO: Add the different system registers, accessible via instructions LDSR and STSR
 }
 
@@ -57,12 +59,16 @@ impl CPU {
         let opcode = instruction >> 10; // Top 6 bits of each instruction determines its type.
         self.pc += 2; // Increment PC
 
-        println!("{}", disassembler::disassemble(instruction, self, bus));
+        //println!("{}", disassembler::disassemble(instruction, self, bus));
 
         match opcode {
             JMP_OPCODE   => self.jmp(instruction), // JMP
+
             MOVEA_OPCODE => self.movea(instruction, bus), // MOVEA
             MOVHI_OPCODE => self.movhi(instruction, bus), // MOVHI
+
+            ADDI_SHORT_OPCODE => self.addi_short(instruction), // ADD r2, #imm. 16-bit version of ADDI.
+            
             _ => panic!("Unimplemented opcode {:b} at address {:08X}", opcode, self.pc-2)
         }
     }
@@ -89,5 +95,13 @@ impl CPU {
         self.pc += 4;
 
         val
+    }
+
+    // Helper function that sets the zero and sign flags depending on the result of an op.
+    // Zero: Set if the result is 0
+    // Sign: Set to the sign bit (bit 31) of the result
+    pub fn setSignAndZero (&mut self, num: u32) {
+        self.psw.setSign(num >> 31);
+        self.psw.setSign((num == 0) as u32)
     }
 }
