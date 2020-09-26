@@ -3,6 +3,7 @@ use bitfield::bitfield;
 use crate::bus::Bus;
 use crate::CPUInstructions::disassembler;
 
+const JMP_OPCODE:   u16 = 0b000110;
 const MOVEA_OPCODE: u16 = 0b101000;
 const MOVHI_OPCODE: u16 = 0b101111;
 
@@ -59,9 +60,10 @@ impl CPU {
         println!("{}", disassembler::disassemble(instruction, self, bus));
 
         match opcode {
-            MOVEA_OPCODE => panic!("MOVEA!"),
+            JMP_OPCODE   => self.jmp(instruction), // JMP
+            MOVEA_OPCODE => self.movea(instruction, bus), // MOVEA
             MOVHI_OPCODE => self.movhi(instruction, bus), // MOVHI
-            _ => panic!("Unimplemented opcode {:b}", opcode)
+            _ => panic!("Unimplemented opcode {:b} at address {:08X}", opcode, self.pc-2)
         }
     }
 

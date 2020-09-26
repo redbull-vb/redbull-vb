@@ -26,3 +26,11 @@ pub fn readFileIntoVec(filename: &String) -> Vec<u8> {
     
     buffer
 }
+
+pub fn signExtendHalfword (num: u16) -> u32 {
+  if (num >> 15) == 1 {
+    return 0xFFFF0000 | (num as u32)
+  }
+
+  num as u32
+}
