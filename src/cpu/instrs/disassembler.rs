@@ -3,7 +3,8 @@ use crate::bus::Bus;
 use crate::cpu::Cpu;
 
 const CONDITION_CODES: &[&str] = &[
-    "v", "c", "e", "nh", "n", "r", "lt", "le", "nv", "nc", "ne", "h", "p", "nop", "ge", "gt",
+    "bv", "bc", "bz", "bnh", "bn", "br", "blt", "ble", "bnv", "bnc", "bnz", "bh", "bp", "nop",
+    "bge", "bgt",
 ];
 
 pub fn disassemble(cpu: &Cpu, bus: &Bus, instr: u16, pc: &mut u32) -> String {
@@ -81,7 +82,7 @@ pub fn disassemble_addi(cpu: &Cpu, bus: &Bus, instr: u16, pc: &mut u32) -> Strin
 pub fn disassemble_bcond(cpu: &Cpu, bus: &Bus, instr: u16, pc: &mut u32) -> String {
     let cond = instr >> 9 & 0xF;
     let mut disp = (instr as i32) << 23 >> 23; // Displacement
-    format!("b{} {}", CONDITION_CODES[cond as usize], disp)
+    format!("{} {}", CONDITION_CODES[cond as usize], disp)
 }
 
 pub fn disassemble_jmp(cpu: &Cpu, bus: &Bus, instr: u16, pc: &mut u32) -> String {
