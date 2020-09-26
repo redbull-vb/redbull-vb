@@ -2,6 +2,7 @@ pub struct Memory {
     // main. non-IO memory
     pub rom: Vec<u8>,
     pub ram: Vec<u8>,
+    pub vip_memory_stub: Vec<u8>,
     pub rom_mask: usize, // Mask to handle ROM read mirroring
 }
 
@@ -13,7 +14,8 @@ impl Memory {
 
         Memory { 
             rom,
-            ram: vec![0; 0xFFFF], 
+            ram: vec![0; 0x10000], 
+            vip_memory_stub: vec![0;  0x80000],
             rom_mask 
         }
     }

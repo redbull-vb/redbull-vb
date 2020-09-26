@@ -25,6 +25,11 @@ pub fn disassemble(cpu: &Cpu, bus: &Bus, instr: u16, pc: &mut u32) -> String {
         opcodes::CMP_REG => disassemble_cmp_reg(cpu, bus, instr, pc),
         
         opcodes::LD_BYTE => disassemble_ld(cpu, bus, instr, pc, "b".to_string()),
+        opcodes::ST_BYTE => disassemble_st(cpu, bus, instr, pc, "b".to_string()),
+        opcodes::LD_HALFWORD => disassemble_ld(cpu, bus, instr, pc, "h".to_string()),
+        opcodes::ST_HALFWORD => disassemble_st(cpu, bus, instr, pc, "h".to_string()),
+        opcodes::LD_WORD => disassemble_ld(cpu, bus, instr, pc, "w".to_string()),
+        opcodes::ST_WORD => disassemble_st(cpu, bus, instr, pc, "w".to_string()),
         _ => panic!("[Disassembler]: Unrecognized instruction {:04X}", instr),
     }
 }
@@ -115,4 +120,13 @@ pub fn disassemble_ld (cpu: &Cpu, bus: &Bus, instr: u16, pc: &mut u32, suffix: S
     let offset = bus.read16(*pc) as i16 as u32;
 
     format!("ld.{} r{}, [r{} + {:08X}]", suffix, reg2_index, reg1_index, offset)
+}
+
+pub fn disassemble_st (cpu: &Cpu, bus: &Bus, instr: u16, pc: &mut u32, suffix: String) -> String {
+    let reg1_index = instr as usize & 0x1F;
+    let reg2_index = (instr as usize >> 5) & 0x1F;
+
+    let offset = bus.read16(*pc) as i16 as u32;
+
+    format!("st.{} r{}, [r{} + {:08X}]", suffix, reg2_index, reg1_index, offset)
 }

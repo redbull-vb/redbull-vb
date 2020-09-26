@@ -62,6 +62,28 @@ impl Bus {
 
         match addr >> 24 & 7 {
             // The range to which the address belongs to depends on bits 24-27 of the addr
+            0 => {
+                // VIP range
+                let vip_addr = addr as usize & 0x7FFFF;
+                println!("Stubbed 32-bit read from VIP memory!");
+                u32::from_le_bytes([
+                    self.memory.vip_memory_stub[vip_addr],
+                    self.memory.vip_memory_stub[vip_addr + 1],
+                    self.memory.vip_memory_stub[vip_addr + 2],
+                    self.memory.vip_memory_stub[vip_addr + 3],
+                ])
+            }
+
+            5 => {
+                let ram_addr = addr as usize & 0xFFFF;
+                u32::from_le_bytes([
+                    self.memory.ram[ram_addr],
+                    self.memory.ram[ram_addr + 1],
+                    self.memory.ram[ram_addr + 2],
+                    self.memory.ram[ram_addr + 3],
+                ])
+            }
+
             7 => {
                 // ROM range
                 let rom_addr = addr as usize & self.memory.rom_mask;
@@ -73,6 +95,65 @@ impl Bus {
                 ])
             }
             _ => panic!("32-bit read from unimpl memory address {:08X}", addr),
+        }
+    }
+
+    pub fn write8(&mut self, mut addr: u32, val: u8) {
+        // Addresses are 27-bit on the VB, so we mask out the top 5 bits
+        addr &= 0x07FF_FFFF;
+
+        match addr >> 24 & 7 { // The range to which the address belongs to depends on bits 24-27 of the addr
+            0 => {
+                self.memory.vip_memory_stub[addr as usize & 0x7FFFF] = val;
+                println!("Unimplemented 8-bit write to VIP memory!")
+            },
+            5 => self.memory.ram[addr as usize & 0xFFFF] = val, // Handle RAM mirroring
+            _ => panic!("8-bit write to unimpl memory address {:08X}", addr),
+        }
+    }
+
+    pub fn write16(&mut self, mut addr: u32, val: u16) {
+        // Addresses are 27-bit on the VB, so we mask out the top 5 bits
+        addr &= 0x07FF_FFFF;
+
+        match addr >> 24 & 7 {  // The range to which the address belongs to depends on bits 24-27 of the addr
+            0 => {
+                self.memory.vip_memory_stub[addr as usize & 0x7FFFF] = val as u8;
+                self.memory.vip_memory_stub[(addr as usize + 1) & 0x7FFFF] = (val >> 8) as u8;
+                println!("Unimplemented 16-bit write to VIP memory!")
+            },
+
+            5 => {
+                self.memory.ram[addr as usize & 0xFFFF] = val as u8;
+                self.memory.ram[(addr as usize + 1) & 0xFFFF] = (val >> 8) as u8;
+            }
+
+            _ => panic!("16-bit write to unimpl memory address {:08X}", addr)
+        }
+    }
+
+    pub fn write32(&mut self, mut addr: u32, val: u32) {
+        // Addresses are 27-bit on the VB, so we mask out the top 5 bits
+        addr &= 0x07FF_FFFF;
+
+        match addr >> 24 & 7 {
+            // The range to which the address belongs to depends on bits 24-27 of the addr
+            0 => {
+                println!("Unimplemented 32-bit write to VIP memory!");
+                self.memory.vip_memory_stub[addr as usize & 0x7FFFF] = val as u8;
+                self.memory.vip_memory_stub[(addr as usize + 1) & 0x7FFFF] = (val >> 8) as u8;
+                self.memory.vip_memory_stub[(addr as usize + 2) & 0x7FFFF] = (val >> 16) as u8;
+                self.memory.vip_memory_stub[(addr as usize + 3) & 0x7FFFF] = (val >> 24) as u8;
+            }
+
+            5 => {
+                self.memory.ram[addr as usize & 0xFFFF] = val as u8;
+                self.memory.ram[(addr as usize + 1) & 0xFFFF] = (val >> 8) as u8;
+                self.memory.ram[(addr as usize + 2) & 0xFFFF] = (val >> 16) as u8;
+                self.memory.ram[(addr as usize + 3) & 0xFFFF] = (val >> 24) as u8;
+            }
+
+            _ => panic!("32-bit write to unimpl memory address {:08X}", addr)
         }
     }
 }
