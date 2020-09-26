@@ -13,8 +13,14 @@ const ADDREG_OPCODE: u16 = 0b000001;
 const ADDIMM_OPCODE: u16 = 0b010001;
 const ADDI_OPCODE: u16 = 0b101001;
 
+const CONDITION_CODES: &[&str] = &["v", "c", "e", "nh", "n", "r", "lt", "le", "nv", "nc", "ne", "h", "p", "nop", "ge", "gt"];
+
 pub fn disassemble(instruction:u16, cpu: &CPU, bus: &Bus) -> String {
     let opcode = instruction >> 10; // Top 6 instruction bits decide the type of instruction
+
+    if (instruction >> 13) == 0b100 { // Special case BCOND, as it doesn't follow the normal instruction format
+        return disassembleBCOND (instruction)
+    }
 
     match opcode {
         JMP_OPCODE   => disassembleJMP(instruction),
@@ -29,7 +35,7 @@ pub fn disassemble(instruction:u16, cpu: &CPU, bus: &Bus) -> String {
     }
 }
 
-pub fn disassembleJMP(instruction:u16) -> String {
+pub fn disassembleJMP(instruction: u16) -> String {
     let reg1 = instruction & 0x1F;
     format!("jmp r{}", reg1)
 }

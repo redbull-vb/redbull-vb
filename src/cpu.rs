@@ -59,7 +59,11 @@ impl CPU {
         let opcode = instruction >> 10; // Top 6 bits of each instruction determines its type.
         self.pc += 2; // Increment PC
 
-        //println!("{}", disassembler::disassemble(instruction, self, bus));
+        println!("{}", disassembler::disassemble(instruction, self, bus));
+
+        if (instruction >> 13) == 0b100 { // Special case BCOND, as it doesn't follow the normal instruction format
+            panic!("BCOND")
+        }
 
         match opcode {
             JMP_OPCODE   => self.jmp(instruction), // JMP
@@ -103,5 +107,31 @@ impl CPU {
     pub fn setSignAndZero (&mut self, num: u32) {
         self.psw.setSign(num >> 31);
         self.psw.setSign((num == 0) as u32)
+    }
+
+    // Parameters: A condition code (0 - 15)
+    // Returns: Whether the condition is true, depending on the current 
+    pub fn isConditionTrue (&self, condition: u16) -> bool {
+        debug_assert!(condition < 16);
+
+        match condition {
+            0 => self.psw.getOverflow() == 1, // V
+            1 => self.psw.getCarry() == 1, // C
+            2 => self.psw.getZero() == 1, // E
+            3 => self.psw.getZero() == 1 || self.psw.getCarry() == 1, // NH
+            4 => self.psw.getSign() == 1, // N
+            5 => true, // Always true
+            6 => self.psw.getOverflow() == 1 || self.psw.getSign() == 1, // LT
+            7 => ((self.psw.getOverflow() == 1) ^ (self.psw.getSign() == 1) || self.psw.getZero() == 1), // LE (TODO: test),
+
+            8 => self.psw.getOverflow() == 0, // MV
+            9 => self.psw.getCarry() == 0, // NC
+            10 => self.psw.getZero() == 0, // NE
+            11 => self.psw.getZero() == 0 && self.psw.getCarry() == 0, // H (TODO: test?)
+            12 => self.psw.getSign() == 0, // P
+            13 => false, // Always false
+            14 => self.psw.getOverflow() == 0 && self.psw.getSign() == 0, // GT
+            _ => !((self.psw.getOverflow() == 1) ^ (self.psw.getSign() == 1) || self.psw.getZero() == 1) // GE (TODO: test),
+        }
     }
 }
