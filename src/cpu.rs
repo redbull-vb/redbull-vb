@@ -1,137 +1,150 @@
-extern crate bitfield;
-use bitfield::bitfield;
+mod instrs;
+
 use crate::bus::Bus;
-use crate::CPUInstructions::disassembler;
+use instrs::opcodes;
 
-const JMP_OPCODE:   u16 = 0b000110;
-const MOVEA_OPCODE: u16 = 0b101000;
-const MOVHI_OPCODE: u16 = 0b101111;
-
-const ADDI_SHORT_OPCODE: u16 = 0b010001;
-
-bitfield!{
-    pub struct PSW(u32);
-    pub getRaw, setRaw: 31, 0;
+bitfield! {
+    pub struct Psw(u32);
 
     // CPU control flags
 
-    pub getI, setI: 19, 16; // "Interrupt level". If an interrupt is requested and its level is less than I, it gets masked
-    pub getNMIPending, setNMIPending: 15, 15; // "NMI pending" flag. Shows if a non-maskable interrupt is pending
-    pub getExceptionPending, setExceptionPending: 14, 14; // Shows if there's a pending exception, set during exception processing or interrupts
-    pub getAddrTrapEnable, setAddrTrapEnable: 13, 13;
-    pub getIRQDisable, setIRQDisable: 12, 12; // Shows if interrupts are disabled
+    /// "Interrupt level". If an interrupt is requested and its level is less than I, it gets masked
+    pub i, set_i: 19, 16;
+    /// "NMI pending" flag. Shows if a non-maskable interrupt is pending
+    pub nmi_pending, set_nmi_pending: 15;
+    /// Shows if there's a pending exception, set during exception processing or interrupts
+    pub exception_pending, set_exception_pending: 14;
+    pub addr_trap_enabled, set_addr_trap_enabled: 13;
+    /// Shows if interrupts are disabled
+    pub irqs_disabled, set_irqs_disabled: 12;
 
     // Floating point flags
 
-    pub getFRO, setFRO: 9, 9; // Floating reserved operand flags. Set when a FP instruction is attempted with a reserved operand.
-    pub getFIV, setFIV: 8, 8; // Set when an invalid FP op is attempted
-    pub getFZD, setFZD: 7, 7; // Set when a DIVF.S instruction is executed with a divisor of 0
-    pub getFOV, setFOV: 6, 6; // Set when the result of a floating-point operation is too large to be represented by the floating short data type.
-    pub getFUD, setFUD: 5, 5; // Set when the result of a floating-point operation is too small to be represented as a normal floating short value.
-    pub getFPR, setFPR: 4, 4; // Set when the result of a floating-point operation is subjected to rounding and suffers precision degradation.
+    /// Floating reserved operand flags. Set when a FP instruction is attempted with a reserved operand.
+    pub fro, set_fro: 9;
+    /// Set when an invalid FP op is attempted
+    pub fiv, set_fiv: 8;
+    /// Set when a DIVF.S instruction is executed with a divisor of 0
+    pub fzd, set_fzd: 7;
+    /// Set when the result of a floating-point operation is too large to be represented by the floating short data type.
+    pub fov, set_fov: 6;
+    /// Set when the result of a floating-point operation is too small to be represented as a normal floating short value.
+    pub fud, set_fud: 5;
+    /// Set when the result of a floating-point operation is subjected to rounding and suffers precision degradation.
+    pub fpr, set_fpr: 4;
 
     // Actually useful flags
 
-    pub getCarry, setCarry: 3, 3; // Set when an op produces a carry
-    pub getOverflow, setOverflow: 2, 2; // Set when an op produces an integer overflow
-    pub getSign, setSign: 1, 1;  // Set to the sign bit (most significant bit) of the result of an operation
-    pub getZero, setZero: 0, 0; // Set if the result of an operation is 0
+    /// Set when an op produces a carry
+    pub carry, set_carry: 3;
+    /// Set when an op produces an integer overflow
+    pub overflow, set_overflow: 2;
+    /// Set to the sign bit (most significant bit) of the result of an operation
+    pub sign, set_sign: 1;
+    /// Set if the result of an operation is 0
+    pub zero, set_zero: 0;
 }
 
-pub struct CPU {
-    pub gprs: [u32; 32], // CPU general purpose registers (r0-r31)
-    pub pc: u32, // program counter
-    pub psw: PSW // CPU flags
-             // TODO: Add the different system registers, accessible via instructions LDSR and STSR
-}
-
-impl CPU {
-    pub fn new () -> CPU {
-        CPU {
-            gprs: [0; 32],
-            pc: 0xFFFFFFF0, // PC value on reset
-            psw: PSW(0x00008000) // PSW value on reset
-        }
-    }
-
-    pub fn step (&mut self, bus: &mut Bus) {
-        let instruction = bus.read16(self.pc); // Fetch an opcode. Opcodes are fetched halfword-by-halfword and can be 16 or 32 bits
-        let opcode = instruction >> 10; // Top 6 bits of each instruction determines its type.
-        self.pc += 2; // Increment PC
-
-        println!("{}", disassembler::disassemble(instruction, self, bus));
-
-        if (instruction >> 13) == 0b100 { // Special case BCOND, as it doesn't follow the normal instruction format
-            panic!("BCOND")
-        }
-
-        match opcode {
-            JMP_OPCODE   => self.jmp(instruction), // JMP
-
-            MOVEA_OPCODE => self.movea(instruction, bus), // MOVEA
-            MOVHI_OPCODE => self.movhi(instruction, bus), // MOVHI
-
-            ADDI_SHORT_OPCODE => self.addi_short(instruction), // ADD r2, #imm. 16-bit version of ADDI.
-            
-            _ => panic!("Unimplemented opcode {:b} at address {:08X}", opcode, self.pc-2)
-        }
-    }
-
-    pub fn getGPR (&mut self, registerNum: usize) -> u32 {
-        if registerNum == 0 { // r0 always returns 0
-            return 0_u32
-        }
-
-        self.gprs[registerNum]
-    }
-
-    // Read 2 bytes from mem[pc] and increment PC
-    pub fn nextHalfword (&mut self, bus: &Bus) -> u16 {
-        let val = bus.read16(self.pc);
-        self.pc += 2;
-
-        val
-    }
-
-    // Read 4 bytes from mem[pc] and increment PC
-    pub fn nextWord (&mut self, bus: &Bus) -> u32 {
-        let val = bus.read32(self.pc);
-        self.pc += 4;
-
-        val
-    }
-
-    // Helper function that sets the zero and sign flags depending on the result of an op.
-    // Zero: Set if the result is 0
-    // Sign: Set to the sign bit (bit 31) of the result
-    pub fn setSignAndZero (&mut self, num: u32) {
-        self.psw.setSign(num >> 31);
-        self.psw.setSign((num == 0) as u32)
+impl Psw {
+    /// Helper function that sets the zero and sign flags depending on the result of an op.
+    /// Zero: Set if the result is 0
+    /// Sign: Set to the sign bit (bit 31) of the result
+    pub fn set_sign_and_zero(&mut self, num: u32) {
+        self.set_sign(num >> 31 != 0);
+        self.set_zero(num == 0);
     }
 
     // Parameters: A condition code (0 - 15)
-    // Returns: Whether the condition is true, depending on the current 
-    pub fn isConditionTrue (&self, condition: u16) -> bool {
-        debug_assert!(condition < 16);
+    // Returns: Whether the condition is true, depending on the current
+    pub fn satisfies_cond(&self, cond: u8) -> bool {
+        debug_assert!(cond < 16);
 
-        match condition {
-            0 => self.psw.getOverflow() == 1, // V
-            1 => self.psw.getCarry() == 1, // C
-            2 => self.psw.getZero() == 1, // E
-            3 => self.psw.getZero() == 1 || self.psw.getCarry() == 1, // NH
-            4 => self.psw.getSign() == 1, // N
-            5 => true, // Always true
-            6 => self.psw.getOverflow() == 1 || self.psw.getSign() == 1, // LT
-            7 => ((self.psw.getOverflow() == 1) ^ (self.psw.getSign() == 1) || self.psw.getZero() == 1), // LE (TODO: test),
-
-            8 => self.psw.getOverflow() == 0, // MV
-            9 => self.psw.getCarry() == 0, // NC
-            10 => self.psw.getZero() == 0, // NE
-            11 => self.psw.getZero() == 0 && self.psw.getCarry() == 0, // H (TODO: test?)
-            12 => self.psw.getSign() == 0, // P
-            13 => false, // Always false
-            14 => self.psw.getOverflow() == 0 && self.psw.getSign() == 0, // GT
-            _ => !((self.psw.getOverflow() == 1) ^ (self.psw.getSign() == 1) || self.psw.getZero() == 1) // GE (TODO: test),
+        match cond {
+            0 => self.overflow(),                                   // V
+            1 => self.carry(),                                      // C
+            2 => self.zero(),                                       // E
+            3 => self.zero() || self.carry(),                       // NH
+            4 => self.sign(),                                       // N
+            5 => true,                                              // Always (BR)
+            6 => self.overflow() || self.sign(),                    // LT
+            7 => ((self.overflow() ^ self.sign()) || self.zero()),  // LE
+            8 => !self.overflow(),                                  // MV
+            9 => !self.carry(),                                     // NC
+            10 => !self.zero(),                                     // NE
+            11 => !(self.zero() || self.carry()),                   // H
+            12 => !self.sign(),                                     // P
+            13 => false,                                            // Never (NOP)
+            14 => !(self.overflow() || self.sign()),                // GT
+            _ => !((self.overflow() ^ self.sign()) || self.zero()), // GE
         }
+    }
+}
+
+pub struct Regs {
+    pub gprs: [u32; 32], // CPU general purpose registers (r0-r31)
+    pub pc: u32,         // program counter
+    pub psw: Psw,        // CPU flags
+}
+
+pub struct Cpu {
+    pub regs: Regs,
+    // TODO: Add the different system registers, accessible via instructions LDSR and STSR
+}
+
+impl Cpu {
+    pub fn new() -> Cpu {
+        Cpu {
+            regs: Regs {
+                gprs: [0; 32],
+                pc: 0xFFFFFFF0,       // PC value on reset
+                psw: Psw(0x00008000), // PSW value on reset
+            },
+        }
+    }
+
+    /// Step the CPU by one instruction
+    pub fn step(&mut self, bus: &mut Bus) {
+        let instr = bus.read16(self.regs.pc); // Fetch an opcode. Opcodes are fetched halfword-by-halfword and can be 16 or 32 bits
+        let opcode = instr >> 10; // Top 6 bits of each instruction determines its type.
+        self.regs.pc = self.regs.pc.wrapping_add(2); // Increment PC
+
+        println!(
+            "{}",
+            instrs::disassembler::disassemble(self, bus, instr, &mut self.regs.pc.clone())
+        );
+
+        match opcode {
+            opcodes::BCOND_START..=opcodes::BCOND_END => self.bcond(bus, instr),
+            opcodes::JMP => self.jmp(bus, instr), // JMP
+
+            opcodes::MOVEA => self.movea(bus, instr), // MOVEA
+            opcodes::MOVHI => self.movhi(bus, instr), // MOVHI
+
+            opcodes::ADDI => self.addi(bus, instr), // ADD r2, #imm. 16-bit version of ADDI.
+
+            _ => panic!(
+                "Unimplemented opcode {:b} at address {:08X}",
+                opcode,
+                self.regs.pc.wrapping_sub(2)
+            ),
+        }
+
+        self.regs.gprs[0] = 0;
+    }
+
+    /// Read 2 bytes from mem[pc] and increment PC
+    pub fn consume_halfword(&mut self, bus: &Bus) -> u16 {
+        let val = bus.read16(self.regs.pc);
+        self.regs.pc = self.regs.pc.wrapping_add(2);
+
+        val
+    }
+
+    /// Read 4 bytes from mem[pc] and increment PC
+    pub fn consume_word(&mut self, bus: &Bus) -> u32 {
+        let val = bus.read32(self.regs.pc);
+        self.regs.pc = self.regs.pc.wrapping_add(4);
+
+        val
     }
 }

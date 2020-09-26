@@ -6,4 +6,3 @@ publish = false
 
 [dependencies]
 bitfield = "0.13.2"
-sfml = "0.15.1"

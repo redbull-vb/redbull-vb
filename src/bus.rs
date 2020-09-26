@@ -15,49 +15,48 @@ use crate::mem::Memory;
 */
 
 pub struct Bus {
-    memory: Memory
+    memory: Memory,
 }
 
 impl Bus {
-    pub fn new (romPath: String) -> Bus {
+    pub fn new(rom_path: &str) -> Bus {
         Bus {
-            memory: Memory::new(romPath)
+            memory: Memory::new(rom_path),
         }
     }
 
-    pub fn read16 (&self, address: u32) -> u16 {
-        debug_assert!((address & 1) == 0); // Assert that the address is aligned
+    pub fn read16(&self, mut addr: u32) -> u16 {
+        // Addresses are 27-bit on the VB, so we mask out the top 5 bits (as well as the lowest bit due to alignment).
+        addr &= 0x07FF_FFFE;
 
-        let mut maskedAddress = address as usize & 0x07FFFFFF; // Addresses are 27-bit on the VB, so we mask out the top 5 bits.
-        let val: u16;
-        
-        match maskedAddress >> 24 { // The range to which the address belongs to depends on bits 24-27 of the addr
-            7 => { // ROM range
-                maskedAddress -= 0x7000000;
-                maskedAddress &= self.memory.ROMMask; // Handle ROM mirroring
-                val = u16::from_le_bytes([self.memory.ROM[maskedAddress], self.memory.ROM[maskedAddress+1]])
+        match addr >> 24 & 7 {
+            // The range to which the address belongs to depends on bits 24-27 of the addr
+            7 => {
+                // ROM range
+                let rom_addr = addr as usize & self.memory.rom_mask;
+                u16::from_le_bytes([self.memory.rom[rom_addr], self.memory.rom[rom_addr + 1]])
             }
-            _ => panic!("16-bit read from unimpl memory address {:08X}", maskedAddress)
+            _ => panic!("16-bit read from unimpl memory address {:08X}", addr),
         }
-
-        val
     }
 
-    pub fn read32 (&self, address: u32) -> u32 {
-        debug_assert!((address & 3) == 0); // Assert that the address is aligned 
+    pub fn read32(&self, mut addr: u32) -> u32 {
+        // Addresses are 27-bit on the VB, so we mask out the top 5 bits (as well as the lowest 2 bits due to alignment).
+        addr &= 0x07FF_FFFC;
 
-        let mut maskedAddress = address as usize & 0x07FFFFFF; // Addresses are 27-bit on the VB, so we mask out the top 5 bits.
-        let val: u32;
-        
-        match maskedAddress >> 24 { // The range to which the address belongs to depends on bits 24-27 of the addr
-            7 => { // ROM range
-                maskedAddress -= 0x7000000;
-                maskedAddress &= self.memory.ROMMask; // Handle ROM mirroring
-                val = u32::from_le_bytes([self.memory.ROM[maskedAddress], self.memory.ROM[maskedAddress+1], self.memory.ROM[maskedAddress+2], self.memory.ROM[maskedAddress+3]])
+        match addr >> 24 & 7 {
+            // The range to which the address belongs to depends on bits 24-27 of the addr
+            7 => {
+                // ROM range
+                let rom_addr = addr as usize & self.memory.rom_mask;
+                u32::from_le_bytes([
+                    self.memory.rom[rom_addr],
+                    self.memory.rom[rom_addr + 1],
+                    self.memory.rom[rom_addr + 2],
+                    self.memory.rom[rom_addr + 3],
+                ])
             }
-            _ => panic!("32-bit read from unimpl memory address {:08X}", maskedAddress)
+            _ => panic!("32-bit read from unimpl memory address {:08X}", addr),
         }
-
-        val
     }
 }
