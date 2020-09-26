@@ -31,4 +31,11 @@ pub mod opcodes {
     pub const JR: u16 = 0b101010;
 
     pub const LD_BYTE: u16 = 0b110000;
+    pub const ST_BYTE: u16 = 0b110100; 
+    pub const LD_HALFWORD: u16 = 0b110001;
+    pub const ST_HALFWORD: u16 = 0b110101;
+    pub const LD_WORD: u16 = 0b110011;
+    pub const ST_WORD: u16 = 0b110111;
+
+    pub const LDSR: u16 = 0b011100;
 }

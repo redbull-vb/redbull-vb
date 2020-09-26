@@ -10,7 +10,7 @@ impl Cpu {
         let cond = (instr >> 9) & 0xF;
 
         if self.regs.psw.satisfies_cond(cond) {
-            let offset = ((instr & 0x1FF) as i32) << 23 >> 23;
+            let offset = ((instr & 0x1FF) as i32) << 23 >> 23;  // Sign extend offset
             let offset = offset as u32;
 
             self.regs.pc = self.regs.pc.wrapping_sub(2).wrapping_add(offset);  // Calculate the new PC. Branch is relevant to the FIRST INSTRUCTION byte, hence the -2
@@ -34,8 +34,18 @@ impl Cpu {
     pub fn jr(&mut self, bus: &mut Bus, instr: u16) {
         let mut offset = (instr as u32 & 0x3FF) << 16;
         offset |= self.consume_halfword(bus) as u32;
+        offset = ((offset as i32) << 6 >> 6) as u32; // Sign extend offset
+
+        let addr = self.regs.pc.wrapping_sub(4).wrapping_add(offset) & !1; // Calculate the new PC. Branch is relevant to the FIRST INSTRUCTION byte, hence the -4
+        self.regs.pc = addr;
+    }
+
+    pub fn jal(&mut self, bus: &mut Bus, instr: u16) {
+        let mut offset = (instr as u32 & 0x3FF) << 16;
+        offset |= self.consume_halfword(bus) as u32;
     
-        offset = ((offset as i32) << 6 >> 6) as u32;
+        offset = ((offset as i32) << 6 >> 6) as u32; // Sign extend offset
+        self.regs.gprs[31] = self.regs.pc; // Store return address to PC
         let addr = self.regs.pc.wrapping_sub(4).wrapping_add(offset) & !1; // Calculate the new PC. Branch is relevant to the FIRST INSTRUCTION byte, hence the -4
         self.regs.pc = addr;
     }

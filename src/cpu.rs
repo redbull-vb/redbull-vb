@@ -5,7 +5,8 @@ use instrs::opcodes;
 
 bitfield! {
     pub struct Psw(u32);
-
+    
+    pub raw, set_raw: 31, 0;
     // CPU control flags
 
     // "Interrupt level". If an interrupt is requested and its level is less than I, it gets masked
@@ -108,21 +109,30 @@ impl Cpu {
         let opcode = instr >> 10; // Top 6 bits of each instruction determines its type.
         self.regs.pc = self.regs.pc.wrapping_add(2); // Increment PC
 
-        println!("{}", instrs::disassembler::disassemble(self, bus, instr, &mut self.regs.pc.clone()));
+        //println!("{}", instrs::disassembler::disassemble(self, bus, instr, &mut self.regs.pc.clone()));
 
         match opcode {
             opcodes::BCOND_START..=opcodes::BCOND_END => self.bcond(bus, instr),
             opcodes::JMP => self.jmp(bus, instr), // JMP reg
             opcodes::JR  => self.jr(bus, instr), // JR $addr
+            opcodes::JAL => self.jal(bus, instr), // JAL $addr
 
             opcodes::MOVEA => self.movea(bus, instr), // MOVEA
             opcodes::MOVHI => self.movhi(bus, instr), // MOVHI
+            opcodes::MOV_IMM => self.mov_imm(bus, instr), // mov reg2, #imm
+            opcodes::MOV_REG => self.mov_reg(bus, instr), // mov reg2, reg1
 
-            opcodes::ADDI_SHORT => self.addi_short(bus, instr), // ADD r2, #imm. 16-bit version of ADDI.
+            opcodes::ADDI_SHORT => self.addi_short(bus, instr), // ADD reg  2, #imm. 16-bit version of ADDI.
             opcodes::CMP_IMM => self.cmp_imm(bus, instr), // cmp reg2, #imm
             opcodes::CMP_REG => self.cmp_reg(bus, instr), // cmp reg2, reg1
 
             opcodes::LD_BYTE => self.ld_byte(bus, instr), // reg2 = [reg1 + disp]
+            opcodes::LD_WORD => self.ld_word(bus, instr),
+            opcodes::ST_BYTE => self.st_byte(bus, instr), // [reg1 + disp] = reg2 & 0xFF
+            opcodes::ST_HALFWORD => self.st_halfword(bus, instr), // [reg1 + disp] = reg2 & 0xFFFF
+            opcodes::ST_WORD => self.st_word(bus, instr), // [reg1 + disp] = reg2
+
+            opcodes::LDSR => self.ldsr(bus, instr), // systemReg = reg2
 
             _ => panic!("Unimplemented opcode {:b} at address {:08X}", opcode, self.regs.pc.wrapping_sub(2)),
         }
