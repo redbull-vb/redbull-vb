@@ -41,27 +41,24 @@ pub fn disassemble_mov_reg(cpu: &Cpu, bus: &Bus, instr: u16, pc: &mut u32) -> St
 pub fn disassemble_movea(cpu: &Cpu, bus: &Bus, instr: u16, pc: &mut u32) -> String {
     let reg1_idx = instr & 0x1F;
     let reg2_idx = (instr >> 5) & 0x1F;
-    let imm = bus.read16(*pc);
+    let imm = bus.read16(*pc) as i16 as i32;
     *pc = pc.wrapping_add(2);
 
-    format!(
-        "movea r{}, r{} + {:#010X}",
-        reg2_idx, reg1_idx, imm as i16 as u32
-    )
+    format!("movea r{}, r{} + {:#010X}", reg2_idx, reg1_idx, imm)
 }
 
 pub fn disassemble_movhi(cpu: &Cpu, bus: &Bus, instr: u16, pc: &mut u32) -> String {
     let reg1_idx = instr & 0x1F;
     let reg2_idx = (instr >> 5) & 0x1F;
-    let imm = bus.read16(*pc) as u32;
+    let imm = (bus.read16(*pc) as u32) << 16;
     *pc = pc.wrapping_add(2);
 
-    format!("movhi r{}, r{} + 0x{:08X}", reg2_idx, reg1_idx, imm << 16)
+    format!("movhi r{}, r{} + 0x{:08X}", reg2_idx, reg1_idx, imm)
 }
 
 pub fn disassemble_add_imm(cpu: &Cpu, bus: &Bus, instr: u16, pc: &mut u32) -> String {
     let reg2_idx = (instr >> 5) & 0x1F;
-    let imm = bus.read16(cpu.regs.pc) as i16 as u32;
+    let imm = bus.read16(cpu.regs.pc) as i16 as i32;
     *pc = pc.wrapping_add(2);
 
     format!("add r{}, {:#010X}", reg2_idx, imm)
@@ -83,8 +80,8 @@ pub fn disassemble_addi(cpu: &Cpu, bus: &Bus, instr: u16, pc: &mut u32) -> Strin
 
 pub fn disassemble_bcond(cpu: &Cpu, bus: &Bus, instr: u16, pc: &mut u32) -> String {
     let cond = instr >> 9 & 0xF;
-    let mut disp = ((instr as i32) << 23 >> 23) as u32; // Displacement
-    format!("b{} {}", CONDITION_CODES[cond as usize], disp as i32)
+    let mut disp = (instr as i32) << 23 >> 23; // Displacement
+    format!("b{} {}", CONDITION_CODES[cond as usize], disp)
 }
 
 pub fn disassemble_jmp(cpu: &Cpu, bus: &Bus, instr: u16, pc: &mut u32) -> String {
