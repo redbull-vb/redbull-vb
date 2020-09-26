@@ -25,6 +25,22 @@ impl Bus {
         }
     }
 
+    pub fn read8(&self, mut addr: u32) -> u8 {
+        // Addresses are 27-bit on the VB, so we mask out the top 5 bits
+        addr &= 0x07FF_FFFF;
+
+        match addr >> 24 & 7 {
+            // The range to which the address belongs to depends on bits 24-27 of the addr
+            5 => self.memory.ram[addr as usize & 0xFFFF], // Handle RAM mirroring
+            7 => {
+                // ROM range
+                let rom_addr = addr as usize & self.memory.rom_mask;
+                self.memory.rom[rom_addr]
+            }
+            _ => panic!("8-bit read from unimpl memory address {:08X}", addr),
+        }
+    }
+
     pub fn read16(&self, mut addr: u32) -> u16 {
         // Addresses are 27-bit on the VB, so we mask out the top 5 bits (as well as the lowest bit due to alignment).
         addr &= 0x07FF_FFFE;
