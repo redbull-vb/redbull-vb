@@ -5,9 +5,9 @@
 extern crate bitfield;
 
 // Todo: Remove this from here
+pub mod bus;
 pub mod cpu;
 pub mod mem;
-pub mod bus;
 mod vb;
 pub use vb::VirtualBoy;
 
