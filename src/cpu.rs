@@ -59,7 +59,11 @@ impl CPU {
         let opcode = instruction >> 10; // Top 6 bits of each instruction determines its type.
         self.pc += 2; // Increment PC
 
-        //println!("{}", disassembler::disassemble(instruction, self, bus));
+        println!("{}", disassembler::disassemble(instruction, self, bus));
+
+        if (instruction >> 13) == 0b100 { // Special case BCOND, as it doesn't follow the normal instruction format
+            panic!("BCOND")
+        }
 
         match opcode {
             JMP_OPCODE   => self.jmp(instruction), // JMP
