@@ -6,7 +6,7 @@ impl Cpu {
     // Cycles: 1
     // Flags affected: none
     // Opcode: 0b101111
-    pub fn movhi(&mut self, instr: u16, bus: &Bus) {
+    pub fn movhi(&mut self, bus: &mut Bus, instr: u16) {
         let reg1_idx = instr as usize & 0x1F;
         let reg2_idx = (instr as usize >> 5) & 0x1F;
 
@@ -18,7 +18,7 @@ impl Cpu {
     // Cycles: 1
     // Flags affected: none
     // Opcode: 0b101111
-    pub fn movea(&mut self, instr: u16, bus: &Bus) {
+    pub fn movea(&mut self, bus: &mut Bus, instr: u16) {
         let reg1_idx = instr as usize & 0x1F;
         let reg2_idx = (instr as usize >> 5) & 0x1F;
 

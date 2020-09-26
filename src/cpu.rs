@@ -1,12 +1,7 @@
 mod instrs;
 
 use crate::bus::Bus;
-
-const JMP_OPCODE: u16 = 0b000110;
-const MOVEA_OPCODE: u16 = 0b101000;
-const MOVHI_OPCODE: u16 = 0b101111;
-
-const ADDI_SHORT_OPCODE: u16 = 0b010001;
+use instrs::opcodes;
 
 bitfield! {
     pub struct Psw(u32);
@@ -58,6 +53,31 @@ impl Psw {
         self.set_sign(num >> 31 != 0);
         self.set_zero(num == 0);
     }
+
+    // Parameters: A condition code (0 - 15)
+    // Returns: Whether the condition is true, depending on the current
+    pub fn satisfies_cond(&self, cond: u8) -> bool {
+        debug_assert!(cond < 16);
+
+        match cond {
+            0 => self.overflow(),                                   // V
+            1 => self.carry(),                                      // C
+            2 => self.zero(),                                       // E
+            3 => self.zero() || self.carry(),                       // NH
+            4 => self.sign(),                                       // N
+            5 => true,                                              // Always (BR)
+            6 => self.overflow() || self.sign(),                    // LT
+            7 => ((self.overflow() ^ self.sign()) || self.zero()),  // LE
+            8 => !self.overflow(),                                  // MV
+            9 => !self.carry(),                                     // NC
+            10 => !self.zero(),                                     // NE
+            11 => !(self.zero() || self.carry()),                   // H
+            12 => !self.sign(),                                     // P
+            13 => false,                                            // Never (NOP)
+            14 => !(self.overflow() || self.sign()),                // GT
+            _ => !((self.overflow() ^ self.sign()) || self.zero()), // GE
+        }
+    }
 }
 
 pub struct Regs {
@@ -84,22 +104,23 @@ impl Cpu {
 
     /// Step the CPU by one instruction
     pub fn step(&mut self, bus: &mut Bus) {
-        let instruction = bus.read16(self.regs.pc); // Fetch an opcode. Opcodes are fetched halfword-by-halfword and can be 16 or 32 bits
-        let opcode = instruction >> 10; // Top 6 bits of each instruction determines its type.
+        let instr = bus.read16(self.regs.pc); // Fetch an opcode. Opcodes are fetched halfword-by-halfword and can be 16 or 32 bits
+        let opcode = instr >> 10; // Top 6 bits of each instruction determines its type.
         self.regs.pc = self.regs.pc.wrapping_add(2); // Increment PC
 
         println!(
             "{}",
-            instrs::disassembler::disassemble(self, bus, instruction, &mut self.regs.pc.clone())
+            instrs::disassembler::disassemble(self, bus, instr, &mut self.regs.pc.clone())
         );
 
         match opcode {
-            JMP_OPCODE => self.jmp(instruction), // JMP
+            opcodes::BCOND_START..=opcodes::BCOND_END => self.bcond(bus, instr),
+            opcodes::JMP => self.jmp(bus, instr), // JMP
 
-            MOVEA_OPCODE => self.movea(instruction, bus), // MOVEA
-            MOVHI_OPCODE => self.movhi(instruction, bus), // MOVHI
+            opcodes::MOVEA => self.movea(bus, instr), // MOVEA
+            opcodes::MOVHI => self.movhi(bus, instr), // MOVHI
 
-            ADDI_SHORT_OPCODE => self.addi_short(instruction), // ADD r2, #imm. 16-bit version of ADDI.
+            opcodes::ADDI => self.addi(bus, instr), // ADD r2, #imm. 16-bit version of ADDI.
 
             _ => panic!(
                 "Unimplemented opcode {:b} at address {:08X}",
