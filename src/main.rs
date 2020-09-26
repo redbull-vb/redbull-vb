@@ -5,6 +5,7 @@
 pub mod cpu;
 pub mod mem;
 pub mod bus;
+pub mod CPUInstructions;
 pub mod virtualBoy;
 pub mod helpers;
 

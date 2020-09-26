@@ -1,6 +1,10 @@
 extern crate bitfield;
 use bitfield::bitfield;
 use crate::bus::Bus;
+use crate::CPUInstructions::disassembler;
+
+const MOVEA_OPCODE: u16 = 0b101000;
+const MOVHI_OPCODE: u16 = 0b101111;
 
 bitfield!{
     pub struct PSW(u32);
@@ -32,8 +36,8 @@ bitfield!{
 }
 
 pub struct CPU {
-    gprs: [u32; 32], // CPU general purpose registers (r0-r31)
-    pc: u32, // program counter
+    pub gprs: [u32; 32], // CPU general purpose registers (r0-r31)
+    pub pc: u32, // program counter
     psw: PSW // CPU flags
              // TODO: Add the different system registers, accessible via instructions LDSR and STSR
 }
@@ -48,8 +52,40 @@ impl CPU {
     }
 
     pub fn step (&mut self, bus: &mut Bus) {
-        let opcode = bus.read16(self.pc); // Fetch an opcode. Opcodes are fetched halfword-by-halfword and can be 16 or 32 bits
-        panic!("Unimplemented opcode {:04X} at {:08X}", opcode, self.pc & 0x7FFFFFF);
+        let instruction = bus.read16(self.pc); // Fetch an opcode. Opcodes are fetched halfword-by-halfword and can be 16 or 32 bits
+        let opcode = instruction >> 10; // Top 6 bits of each instruction determines its type.
         self.pc += 2; // Increment PC
+
+        println!("{}", disassembler::disassemble(instruction, self, bus));
+
+        match opcode {
+            MOVEA_OPCODE => panic!("MOVEA!"),
+            MOVHI_OPCODE => self.movhi(instruction, bus), // MOVHI
+            _ => panic!("Unimplemented opcode {:b}", opcode)
+        }
+    }
+
+    pub fn getGPR (&mut self, registerNum: usize) -> u32 {
+        if registerNum == 0 { // r0 always returns 0
+            return 0_u32
+        }
+
+        self.gprs[registerNum]
+    }
+
+    // Read 2 bytes from mem[pc] and increment PC
+    pub fn nextHalfword (&mut self, bus: &Bus) -> u16 {
+        let val = bus.read16(self.pc);
+        self.pc += 2;
+
+        val
+    }
+
+    // Read 4 bytes from mem[pc] and increment PC
+    pub fn nextWord (&mut self, bus: &Bus) -> u32 {
+        let val = bus.read32(self.pc);
+        self.pc += 4;
+
+        val
     }
 }
