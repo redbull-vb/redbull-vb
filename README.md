@@ -1,2 +1,2 @@
 # Redbull-VB
-Redbull is a toy Nintendo Virtual Boy emulator programmed in `placeholder`
+Redbull is a toy Nintendo Virtual Boy emulator programmed in Rust
