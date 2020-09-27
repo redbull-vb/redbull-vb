@@ -22,7 +22,7 @@ impl Cpu {
 
     pub fn addi_long (&mut self, bus: &mut Bus, instr: u16) {
         let reg2_index = (instr >> 5 & 0x1F) as usize;
-        let reg1_index = (instr >> 5 & 0x1F) as usize;
+        let reg1_index = (instr & 0x1F) as usize;
 
         let reg1 = self.regs.gprs[reg1_index];
         let imm = self.consume_halfword(bus) as i16 as u32;

@@ -47,6 +47,12 @@ impl Bus {
 
         match addr >> 24 & 7 {
             // The range to which the address belongs to depends on bits 24-27 of the addr
+            0 => {
+                // ROM range
+                let vip_addr = addr as usize & 0x7FFFF;
+                u16::from_le_bytes([self.memory.vip_memory_stub[vip_addr], self.memory.vip_memory_stub[vip_addr + 1]])
+            }
+
             7 => {
                 // ROM range
                 let rom_addr = addr as usize & self.memory.rom_mask;
@@ -144,6 +150,18 @@ impl Bus {
                 self.memory.vip_memory_stub[(addr as usize + 1) & 0x7FFFF] = (val >> 8) as u8;
                 self.memory.vip_memory_stub[(addr as usize + 2) & 0x7FFFF] = (val >> 16) as u8;
                 self.memory.vip_memory_stub[(addr as usize + 3) & 0x7FFFF] = (val >> 24) as u8;
+            }
+
+            1 => {
+                println!("Unimplemented 32-bit write to VSU memory!");
+                self.memory.vsu_memory_stub[addr as usize & 0x7FF] = val as u8;
+                self.memory.vsu_memory_stub[(addr as usize + 1) & 0x7FF] = (val >> 8) as u8;
+                self.memory.vsu_memory_stub[(addr as usize + 2) & 0x7FF] = (val >> 16) as u8;
+                self.memory.vsu_memory_stub[(addr as usize + 3) & 0x7FF] = (val >> 24) as u8;
+            }
+
+            2 => {
+                println!("Unimplemented 32-bit write to misc hardware")
             }
 
             5 => {

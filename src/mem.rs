@@ -3,6 +3,7 @@ pub struct Memory {
     pub rom: Vec<u8>,
     pub ram: Vec<u8>,
     pub vip_memory_stub: Vec<u8>,
+    pub vsu_memory_stub: Vec<u8>,
     pub rom_mask: usize, // Mask to handle ROM read mirroring
 }
 
@@ -16,6 +17,7 @@ impl Memory {
             rom,
             ram: vec![0; 0x10000], 
             vip_memory_stub: vec![0;  0x80000],
+            vsu_memory_stub: vec![0; 0x800],
             rom_mask 
         }
     }
