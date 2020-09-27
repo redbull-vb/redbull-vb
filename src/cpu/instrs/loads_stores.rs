@@ -26,7 +26,7 @@ impl Cpu {
         let offset = self.consume_halfword(bus) as i16 as u32; // sign extend offset
         let addr = self.regs.gprs[reg1_index].wrapping_add(offset);
 
-        self.regs.gprs[reg2_index] = bus.read16(addr) as i8 as u32; // read byte, sign extend it
+        self.regs.gprs[reg2_index] = bus.read16(addr) as i16 as u32; // read byte, sign extend it
     }
 
     pub fn ld_word (&mut self, bus: &Bus, instr: u16) {
