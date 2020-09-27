@@ -45,6 +45,6 @@ pub mod opcodes {
     pub const ST_WORD: u16 = 0b110111;
 
     pub const LDSR: u16 = 0b011100;
-    
+
     pub const SEI: u16 = 0b011110;
 }

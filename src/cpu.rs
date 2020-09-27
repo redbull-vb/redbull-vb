@@ -136,7 +136,6 @@ impl Cpu {
             opcodes::LD_BYTE => self.ld_byte(bus, instr), // reg2 = (byte) [reg1 + disp]
             opcodes::LD_HALFWORD => self.ld_halfword(bus, instr), // reg2 = (halfword) [reg1 + disp]
             opcodes::LD_WORD => self.ld_word(bus, instr), // reg2 = (word) [reg1 + disp]
-
             opcodes::ST_BYTE => self.st_byte(bus, instr), // [reg1 + disp] = reg2 & 0xFF
             opcodes::ST_HALFWORD => self.st_halfword(bus, instr), // [reg1 + disp] = reg2 & 0xFFFF
             opcodes::ST_WORD => self.st_word(bus, instr), // [reg1 + disp] = reg2
