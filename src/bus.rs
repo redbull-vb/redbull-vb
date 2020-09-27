@@ -65,6 +65,13 @@ impl Bus {
                 //println!("Unimplemented 16-bit read from unmapped memory???")
             }
 
+            5=> {
+                // Misc hw range
+                let ram_addr = addr as usize & 0xFFFF;
+                //println!("Unimplemented 16-bit read from misc hw memory");
+                u16::from_le_bytes([self.memory.ram[ram_addr], self.memory.ram[ram_addr+1]])
+            }
+
             7 => {
                 // ROM range
                 let rom_addr = addr as usize & self.memory.rom_mask;
