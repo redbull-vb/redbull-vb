@@ -36,6 +36,36 @@ impl Cpu {
         self.regs.gprs[reg2_index] = res;
     }
 
+    pub fn add_reg (&mut self, bus: &mut Bus, instr: u16) {
+        let reg2_index = (instr >> 5 & 0x1F) as usize;
+        let reg1_index = (instr & 0x1F) as usize;
+
+        let reg1 = self.regs.gprs[reg1_index];
+        let reg2 = self.regs.gprs[reg2_index];
+
+        let (res, overflow) = (reg1 as i32).overflowing_add(reg2 as i32);
+        let res = res as u32;
+        self.regs.psw.set_sign_and_zero(res);
+        self.regs.psw.set_carry(res < reg1); // Set carry if the result wrapped around.
+        self.regs.psw.set_overflow(overflow);
+
+        self.regs.gprs[reg2_index] = res;
+    }
+
+    // NOTE: ANDI DOESN'T SIGN EXTEND
+    pub fn andi (&mut self, bus: &mut Bus, instr: u16) {
+        let reg1_index = instr as usize & 0x1F;
+        let reg2_index = (instr as usize >> 5) & 0x1F;
+        let imm = self.consume_halfword(bus);
+        let reg1 = self.regs.gprs[reg1_index];
+        let res = reg1 & imm as u32; 
+
+        self.regs.psw.set_sign(false);
+        self.regs.psw.set_overflow(false);
+        self.regs.psw.set_zero(res == 0);
+        self.regs.gprs[reg2_index] = res;
+    }
+
     // (discard) reg2 - (sign extend) imm
     // Cycles: 1
     // Flags affected: Zero, Sign, Carry, Overflow

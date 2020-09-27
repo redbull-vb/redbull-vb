@@ -48,9 +48,21 @@ impl Bus {
         match addr >> 24 & 7 {
             // The range to which the address belongs to depends on bits 24-27 of the addr
             0 => {
-                // ROM range
+                // VIP range
                 let vip_addr = addr as usize & 0x7FFFF;
                 u16::from_le_bytes([self.memory.vip_memory_stub[vip_addr], self.memory.vip_memory_stub[vip_addr + 1]])
+            }
+
+            2 => {
+                // Misc hw range
+                let misc_hw_addr = addr as usize & 0x3F;
+                //println!("Unimplemented 16-bit read from misc hw memory");
+                u16::from_le_bytes([self.memory.misc_hw_memory_stub[misc_hw_addr], self.memory.misc_hw_memory_stub[misc_hw_addr+1]])
+            }
+
+            3 => {
+                0xFFFF
+                //println!("Unimplemented 16-bit read from unmapped memory???")
             }
 
             7 => {
@@ -71,12 +83,24 @@ impl Bus {
             0 => {
                 // VIP range
                 let vip_addr = addr as usize & 0x7FFFF;
-                println!("Stubbed 32-bit read from VIP memory!");
+                //println!("Stubbed 32-bit read from VIP memory!");
                 u32::from_le_bytes([
                     self.memory.vip_memory_stub[vip_addr],
                     self.memory.vip_memory_stub[vip_addr + 1],
                     self.memory.vip_memory_stub[vip_addr + 2],
                     self.memory.vip_memory_stub[vip_addr + 3],
+                ])
+            }
+
+            2 => {
+                // Misc hw range
+                let misc_hw_addr = addr as usize & 0x3F;
+                //println!("Stubbed 32-bit read from misc hw memory!");
+                u32::from_le_bytes([
+                    self.memory.misc_hw_memory_stub[misc_hw_addr],
+                    self.memory.misc_hw_memory_stub[misc_hw_addr + 1],
+                    self.memory.misc_hw_memory_stub[misc_hw_addr + 2],
+                    self.memory.misc_hw_memory_stub[misc_hw_addr + 3],
                 ])
             }
 
@@ -111,7 +135,7 @@ impl Bus {
         match addr >> 24 & 7 { // The range to which the address belongs to depends on bits 24-27 of the addr
             0 => {
                 self.memory.vip_memory_stub[addr as usize & 0x7FFFF] = val;
-                println!("Unimplemented 8-bit write to VIP memory!")
+                //println!("Unimplemented 8-bit write to VIP memory!")
             },
             5 => self.memory.ram[addr as usize & 0xFFFF] = val, // Handle RAM mirroring
             _ => panic!("8-bit write to unimpl memory address {:08X}", addr),
@@ -126,8 +150,14 @@ impl Bus {
             0 => {
                 self.memory.vip_memory_stub[addr as usize & 0x7FFFF] = val as u8;
                 self.memory.vip_memory_stub[(addr as usize + 1) & 0x7FFFF] = (val >> 8) as u8;
-                println!("Unimplemented 16-bit write to VIP memory!")
+                //println!("Unimplemented 16-bit write to VIP memory!")
             },
+
+            2 => {
+                self.memory.misc_hw_memory_stub[addr as usize & 0x3F] = val as u8;
+                self.memory.misc_hw_memory_stub[(addr as usize + 1) & 0x3F] = (val >> 8) as u8;
+                //println!("Unimplemented 16-bit write to misc hardware")
+            }
 
             5 => {
                 self.memory.ram[addr as usize & 0xFFFF] = val as u8;
@@ -145,7 +175,7 @@ impl Bus {
         match addr >> 24 & 7 {
             // The range to which the address belongs to depends on bits 24-27 of the addr
             0 => {
-                println!("Unimplemented 32-bit write to VIP memory!");
+                //println!("Unimplemented 32-bit write to VIP memory!");
                 self.memory.vip_memory_stub[addr as usize & 0x7FFFF] = val as u8;
                 self.memory.vip_memory_stub[(addr as usize + 1) & 0x7FFFF] = (val >> 8) as u8;
                 self.memory.vip_memory_stub[(addr as usize + 2) & 0x7FFFF] = (val >> 16) as u8;
@@ -153,7 +183,7 @@ impl Bus {
             }
 
             1 => {
-                println!("Unimplemented 32-bit write to VSU memory!");
+                //println!("Unimplemented 32-bit write to VSU memory!");
                 self.memory.vsu_memory_stub[addr as usize & 0x7FF] = val as u8;
                 self.memory.vsu_memory_stub[(addr as usize + 1) & 0x7FF] = (val >> 8) as u8;
                 self.memory.vsu_memory_stub[(addr as usize + 2) & 0x7FF] = (val >> 16) as u8;
@@ -161,7 +191,11 @@ impl Bus {
             }
 
             2 => {
-                println!("Unimplemented 32-bit write to misc hardware")
+                self.memory.misc_hw_memory_stub[addr as usize & 0x3F] = val as u8;
+                self.memory.misc_hw_memory_stub[(addr as usize + 1) & 0x3F] = (val >> 8) as u8;
+                self.memory.misc_hw_memory_stub[(addr as usize + 2) & 0x3F] = (val >> 16) as u8;
+                self.memory.misc_hw_memory_stub[(addr as usize + 3) & 0x3F] = (val >> 24) as u8;
+                //println!("Unimplemented 32-bit write to misc hardware")
             }
 
             5 => {
