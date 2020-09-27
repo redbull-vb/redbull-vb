@@ -31,6 +31,10 @@ pub mod opcodes {
     pub const JMP: u16 = 0b000110;
     pub const JR: u16 = 0b101010;
 
+    pub const IN_BYTE: u16 = 0b111000;
+    pub const IN_HALFWORD: u16 = 0b111001;
+    pub const IN_WORD: u16 = 0b111011;
+
     pub const LD_BYTE: u16 = 0b110000;
     pub const ST_BYTE: u16 = 0b110100; 
     pub const LD_HALFWORD: u16 = 0b110001;
