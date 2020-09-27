@@ -130,6 +130,7 @@ impl Cpu {
             opcodes::CMP_REG => self.cmp_reg(bus, instr), // cmp reg2, reg1
 
             opcodes::LD_BYTE => self.ld_byte(bus, instr), // reg2 = [reg1 + disp]
+            opcodes::LD_HALFWORD => self.ld_halfword(bus, instr), 
             opcodes::LD_WORD => self.ld_word(bus, instr),
             opcodes::ST_BYTE => self.st_byte(bus, instr), // [reg1 + disp] = reg2 & 0xFF
             opcodes::ST_HALFWORD => self.st_halfword(bus, instr), // [reg1 + disp] = reg2 & 0xFFFF
