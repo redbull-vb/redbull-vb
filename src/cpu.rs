@@ -1,5 +1,4 @@
 mod instrs;
-
 use crate::bus::Bus;
 use instrs::opcodes;
 
@@ -105,7 +104,7 @@ impl Cpu {
 
     // Step the CPU by one instruction
     pub fn step(&mut self, bus: &mut Bus) {
-        if self.regs.pc == 0x7001CBC {panic!("breakpoint")}
+        if self.regs.pc == 0x7001CC0 {panic!("breakpoint")}
 
         let instr = bus.read16(self.regs.pc); // Fetch an opcode. Opcodes are fetched halfword-by-halfword and can be 16 or 32 bits
         let opcode = instr >> 10; // Top 6 bits of each instruction determines its type.
@@ -124,14 +123,17 @@ impl Cpu {
             opcodes::MOV_IMM => self.mov_imm(bus, instr), // mov reg2, #imm
             opcodes::MOV_REG => self.mov_reg(bus, instr), // mov reg2, reg1
 
+            opcodes::ADD_REG => self.add_reg(bus, instr), // ADD reg2, reg1
             opcodes::ADDI_SHORT => self.addi_short(bus, instr), // ADD reg2, #imm. 16-bit version of ADDI.
-            opcodes::ADDI_LONG => self.addi_long(bus, instr), // ADDI reg2, r1, #imm with a 32-bit imm.
+            opcodes::ADDI_LONG => self.addi_long(bus, instr), // ADDI reg2, reg1, #imm with a 32-bit imm.
+            opcodes::ANDI => self.andi(bus, instr), // and r2, r1, (zero extend) #imm
             opcodes::CMP_IMM => self.cmp_imm(bus, instr), // cmp reg2, #imm
             opcodes::CMP_REG => self.cmp_reg(bus, instr), // cmp reg2, reg1
 
-            opcodes::LD_BYTE => self.ld_byte(bus, instr), // reg2 = [reg1 + disp]
-            opcodes::LD_HALFWORD => self.ld_halfword(bus, instr), 
-            opcodes::LD_WORD => self.ld_word(bus, instr),
+            opcodes::LD_BYTE => self.ld_byte(bus, instr), // reg2 = (byte) [reg1 + disp]
+            opcodes::LD_HALFWORD => self.ld_halfword(bus, instr), // reg2 = (halfword) [reg1 + disp]
+            opcodes::LD_WORD => self.ld_word(bus, instr), // reg2 = (word) [reg1 + disp]
+
             opcodes::ST_BYTE => self.st_byte(bus, instr), // [reg1 + disp] = reg2 & 0xFF
             opcodes::ST_HALFWORD => self.st_halfword(bus, instr), // [reg1 + disp] = reg2 & 0xFFFF
             opcodes::ST_WORD => self.st_word(bus, instr), // [reg1 + disp] = reg2

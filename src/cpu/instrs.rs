@@ -15,6 +15,7 @@ pub mod opcodes {
     pub const ADD_REG: u16 = 0b000001;
     pub const ADDI_LONG: u16 = 0b101001; // 32-bit version of ADDI
     pub const ADDI_SHORT: u16 = 0b010001; // 16-bit version of ADDI
+    pub const ANDI: u16 = 0b101101;
     pub const CMP_IMM: u16 = 0b010011;
     pub const CMP_REG: u16 = 0b000011;
     pub const DIV: u16 = 0b001001;
