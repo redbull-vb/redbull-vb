@@ -126,9 +126,12 @@ impl Cpu {
             opcodes::ADD_REG => self.add_reg(bus, instr), // ADD reg2, reg1
             opcodes::ADDI_SHORT => self.addi_short(bus, instr), // ADD reg2, #imm. 16-bit version of ADDI.
             opcodes::ADDI_LONG => self.addi_long(bus, instr), // ADDI reg2, reg1, #imm with a 32-bit imm.
-            opcodes::ANDI => self.andi(bus, instr), // and r2, r1, (zero extend) #imm
+            opcodes::ANDI => self.andi(bus, instr), // andi r2, r1, (zero extend) #imm
+            opcodes::ORI => self.ori(bus, instr), // ori r2, r1, (zero extend) #imm
             opcodes::CMP_IMM => self.cmp_imm(bus, instr), // cmp reg2, #imm
             opcodes::CMP_REG => self.cmp_reg(bus, instr), // cmp reg2, reg1
+            opcodes::DIV => self.div(instr), // r30 = reg2 MOD reg1. reg2 = reg2 / reg1.
+            opcodes::MUL => self.mul(instr), // res = (signed) reg2 * (signed) reg1. r30 = (res >> 32). reg2 = (reg & 0xFFFFFFFF)
 
             opcodes::LD_BYTE => self.ld_byte(bus, instr), // reg2 = (byte) [reg1 + disp]
             opcodes::LD_HALFWORD => self.ld_halfword(bus, instr), // reg2 = (halfword) [reg1 + disp]
@@ -138,6 +141,8 @@ impl Cpu {
             opcodes::ST_WORD => self.st_word(bus, instr), // [reg1 + disp] = reg2
 
             opcodes::LDSR => self.ldsr(bus, instr), // systemReg = reg2
+
+            opcodes::SEI => self.sei(), // interrupts disabled = true;
 
             _ => panic!("Unimplemented opcode {:b} at address {:08X}", opcode, self.regs.pc.wrapping_sub(2)),
         }

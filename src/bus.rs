@@ -31,6 +31,7 @@ impl Bus {
 
         match addr >> 24 & 7 {
             // The range to which the address belongs to depends on bits 24-27 of the addr
+            2 => self.memory.misc_hw_memory_stub[addr as usize & 0x3F],
             5 => self.memory.ram[addr as usize & 0xFFFF], // Handle RAM mirroring
             7 => {
                 // ROM range
@@ -144,6 +145,10 @@ impl Bus {
                 self.memory.vip_memory_stub[addr as usize & 0x7FFFF] = val;
                 //println!("Unimplemented 8-bit write to VIP memory!")
             },
+            2 => {
+                self.memory.misc_hw_memory_stub[addr as usize & 0x3F] = val;
+                //println!("Unimplemented 8-bit write to misc hw memory!")
+            }
             5 => self.memory.ram[addr as usize & 0xFFFF] = val, // Handle RAM mirroring
             _ => panic!("8-bit write to unimpl memory address {:08X}", addr),
         }

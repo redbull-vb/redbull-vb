@@ -5,6 +5,7 @@ pub mod alu;
 pub mod branches;
 pub mod reg_transfer;
 pub mod loads_stores;
+pub mod misc_instrs;
 
 pub mod opcodes {
     pub const MOV_IMM: u16 = 0b010000;
@@ -16,6 +17,7 @@ pub mod opcodes {
     pub const ADDI_LONG: u16 = 0b101001; // 32-bit version of ADDI
     pub const ADDI_SHORT: u16 = 0b010001; // 16-bit version of ADDI
     pub const ANDI: u16 = 0b101101;
+    pub const ORI: u16 = 0b101100;
     pub const CMP_IMM: u16 = 0b010011;
     pub const CMP_REG: u16 = 0b000011;
     pub const DIV: u16 = 0b001001;
@@ -39,4 +41,6 @@ pub mod opcodes {
     pub const ST_WORD: u16 = 0b110111;
 
     pub const LDSR: u16 = 0b011100;
+    
+    pub const SEI: u16 = 0b011110;
 }
