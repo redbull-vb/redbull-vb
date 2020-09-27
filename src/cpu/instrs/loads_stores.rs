@@ -29,6 +29,7 @@ impl Cpu {
         self.regs.gprs[reg2_index] = bus.read32(addr); // read byte, sign extend it
     }
 
+    
     pub fn st_byte (&mut self, bus: &mut Bus, instr: u16) {
         let reg1_index = instr as usize & 0x1F;
         let reg2_index = (instr as usize >> 5) & 0x1F;
