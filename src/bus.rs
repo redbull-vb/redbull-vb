@@ -31,6 +31,7 @@ impl Bus {
 
         match addr >> 24 & 7 {
             // The range to which the address belongs to depends on bits 24-27 of the addr
+            0 => self.memory.vip_memory_stub[addr as usize & 0x7FFFF],
             2 => self.memory.misc_hw_memory_stub[addr as usize & 0x3F],
             5 => self.memory.ram[addr as usize & 0xFFFF], // Handle RAM mirroring
             7 => {
